@@ -1,0 +1,384 @@
+EXPLAINABLE PREDICTIVE MAINTENANCE PROJECT - COMPLETE RUN GUIDE
+================================================================
+
+Project title:
+Explainable Predictive Maintenance System using Machine Learning for Industrial Equipment
+
+This guide explains how to run the project from zero to dashboard, including what each command means.
+
+
+1. OPEN THE PROJECT FOLDER
+--------------------------
+
+Command:
+
+cd "C:\Users\LENOVO\OneDrive\Documents\New project"
+
+Meaning:
+This moves the terminal into the project folder. All other commands should be run from this location.
+
+
+2. INSTALL REQUIRED PYTHON LIBRARIES
+------------------------------------
+
+Command:
+
+pip install -r requirements.txt
+
+Meaning:
+This installs all libraries needed for the project, such as:
+
+- pandas and numpy for data handling
+- scikit-learn for machine learning
+- xgboost for advanced boosting model
+- shap and lime for explainable AI
+- streamlit for dashboard
+- fastapi for API deployment
+- plotly, matplotlib, seaborn for graphs
+
+
+3. CREATE A LARGE SYNTHETIC INDUSTRIAL DATASET
+----------------------------------------------
+
+Command:
+
+python -m src.simulation.generate_synthetic_dataset --rows 10000 --output "$env:TEMP\synthetic_maintenance_large.csv"
+
+Meaning:
+This creates a large synthetic industrial dataset with 10,000 machine records.
+
+The dataset includes machine sensor values such as:
+
+- machine_id
+- machine_type
+- air_temperature
+- process_temperature
+- rotational_speed
+- torque
+- tool_wear
+- failure_binary
+- failure_type
+
+Why synthetic data is used:
+Real industrial failure data is difficult to access because it is usually private, confidential, expensive to collect, and failures are rare. Synthetic data allows us to test the complete system pipeline before applying it to real factory data.
+
+Important:
+Synthetic data validates the project workflow and system functionality. For real industrial deployment, the model should be retrained and validated on real machine sensor data or benchmark datasets such as AI4I 2020.
+
+
+4. TRAIN THE MAIN FAILURE-RISK MODEL
+------------------------------------
+
+Command:
+
+python main.py train --data "$env:TEMP\synthetic_maintenance_large.csv" --target failure_binary
+
+Meaning:
+This trains machine learning models using the generated dataset.
+
+The target is failure_binary.
+
+failure_binary means:
+
+0 = Normal machine condition
+1 = Failure risk
+
+This answers the question:
+"Does this machine need maintenance attention?"
+
+This is the main model used by the dashboard.
+
+
+5. OPTIONAL: TRAIN FAILURE TYPE MODEL
+-------------------------------------
+
+Command:
+
+python main.py train --data "$env:TEMP\synthetic_maintenance_large.csv" --target failure_type
+
+Meaning:
+This trains models to predict the type of failure.
+
+failure_type can include:
+
+- no_failure
+- tool_wear_failure
+- heat_dissipation_failure
+- power_failure
+- overstrain_failure
+- random_failure
+
+This answers the question:
+"What type of problem is likely?"
+
+Difference between failure_binary and failure_type:
+
+failure_binary:
+- Predicts whether the machine is normal or at failure risk.
+- Used for alerting and dashboard maintenance decisions.
+- Example: MCH-101 -> Failure risk
+
+failure_type:
+- Predicts what kind of fault may occur.
+- Used for deeper diagnosis and research analysis.
+- Example: MCH-101 -> tool_wear_failure
+
+Simple explanation:
+
+failure_binary = Should we worry?
+failure_type   = What is the problem?
+
+
+6. MODELS TRAINED AND COMPARED
+------------------------------
+
+The project trains and compares multiple machine learning algorithms:
+
+1. Logistic Regression
+2. Decision Tree
+3. Random Forest
+4. Support Vector Machine
+5. Gradient Boosting
+6. XGBoost
+7. Artificial Neural Network
+
+Why multiple models are compared:
+Different algorithms learn patterns differently. Some models are simple and interpretable, while others are more powerful for nonlinear industrial sensor patterns. Comparing models helps us choose the best-performing model instead of assuming one model is best.
+
+Evaluation metrics used:
+
+- Accuracy
+- Precision
+- Recall
+- F1 Score
+- ROC-AUC
+- Confusion Matrix
+
+The system compares all models and automatically selects the best model based on performance.
+
+Example result:
+
+Best model: Gradient Boosting
+
+Meaning:
+Gradient Boosting gave the best balance of accuracy, precision, recall, F1 score, and ROC-AUC for the tested dataset.
+
+
+7. WHAT HAPPENS DURING TRAINING
+-------------------------------
+
+When the training command runs, the project performs these steps:
+
+1. Loads the dataset.
+2. Cleans and normalizes column names.
+3. Handles missing values.
+4. Encodes categorical machine type.
+5. Scales numeric values when needed.
+6. Creates engineered features:
+   - temperature_delta
+   - mechanical_power
+   - wear_torque_ratio
+   - thermal_stress_index
+7. Trains multiple ML models.
+8. Evaluates all models.
+9. Compares performance.
+10. Selects the best model.
+11. Saves the trained model.
+12. Generates reports and graphs.
+
+
+8. WHY FEATURE ENGINEERING IS USED
+----------------------------------
+
+Original features:
+
+- machine_type
+- air_temperature
+- process_temperature
+- rotational_speed
+- torque
+- tool_wear
+
+Engineered features:
+
+- temperature_delta:
+  Difference between process temperature and air temperature.
+
+- mechanical_power:
+  Estimated power/load using torque and rotational speed.
+
+- wear_torque_ratio:
+  Relationship between tool wear and torque.
+
+- thermal_stress_index:
+  Combined effect of temperature difference and torque.
+
+Why:
+Machine failure usually depends on combinations of conditions, not only one sensor value. Feature engineering helps the model understand these combined industrial patterns.
+
+
+9. RUN THE STREAMLIT DASHBOARD
+------------------------------
+
+Command:
+
+streamlit run dashboard/streamlit_app.py
+
+Meaning:
+This starts the web dashboard.
+
+After running it, open:
+
+http://localhost:8501
+
+
+10. WHICH CSV TO UPLOAD IN DASHBOARD
+------------------------------------
+
+For simple visual testing, upload:
+
+data/sample/failure_risk_test.csv
+
+Meaning:
+This small file contains clear failure-risk and normal examples with machine IDs.
+
+For larger testing, upload:
+
+C:\Users\LENOVO\AppData\Local\Temp\synthetic_maintenance_large.csv
+
+For 111 rows x 111 columns testing, upload:
+
+C:\Users\LENOVO\AppData\Local\Temp\predictive_maintenance_111x111.csv
+
+
+11. DASHBOARD TABS
+------------------
+
+The dashboard has two main tabs:
+
+1. Prediction & Maintenance
+2. Analysis Graphs
+
+
+12. PREDICTION & MAINTENANCE TAB
+--------------------------------
+
+This tab shows:
+
+- Machine ID
+- Predicted status
+- Failure probability
+- Priority
+- Suspected issue
+- What to repair/check
+- Recommended technician action
+- Explanation of why the model predicted risk
+- Machines requiring maintenance table
+- Full prediction table
+
+Example:
+
+Machine ID: MCH-101
+Predicted status: Failure risk
+Failure probability: 97.7%
+Suspected issue: Tool wear with mechanical overload
+What to repair/check: Tool, spindle load, bearings, lubrication
+Recommended action: Inspect or replace cutting tool; check load, alignment, and lubrication
+
+
+13. ANALYSIS GRAPHS TAB
+-----------------------
+
+This tab shows maintenance analysis graphs:
+
+- Normal vs Failure-Risk Machines
+- Likely Maintenance Issues
+- Average Sensor Values by Status
+- Highest Risk Machines
+- Sensor Trend Lines
+- Failure Type Distribution, if available
+
+Why this tab is useful:
+It helps engineers and maintenance teams understand the overall health of all machines visually, not just one prediction at a time.
+
+
+14. EXPLAINABLE AI USED
+-----------------------
+
+The project includes Explainable AI using:
+
+1. SHAP
+2. LIME
+
+Why explainability is important:
+In industrial maintenance, engineers need to know why a model predicted failure risk. A black-box prediction is not enough. Explainability helps build trust and supports better maintenance decisions.
+
+Example explanation:
+
+"Machine failure risk is driven by high torque combined with excessive tool wear."
+
+
+15. COMPLETE COMMAND FLOW
+-------------------------
+
+Use this full sequence:
+
+cd "C:\Users\LENOVO\OneDrive\Documents\New project"
+
+pip install -r requirements.txt
+
+python -m src.simulation.generate_synthetic_dataset --rows 10000 --output "$env:TEMP\synthetic_maintenance_large.csv"
+
+python main.py train --data "$env:TEMP\synthetic_maintenance_large.csv" --target failure_binary
+
+streamlit run dashboard/streamlit_app.py
+
+Open:
+
+http://localhost:8501
+
+Upload:
+
+data/sample/failure_risk_test.csv
+
+or:
+
+C:\Users\LENOVO\AppData\Local\Temp\synthetic_maintenance_large.csv
+
+
+16. COMMON WARNING ABOUT REPORTS FOLDER
+---------------------------------------
+
+You may see a warning like:
+
+Could not write to 'reports'. Using temp folder instead.
+
+Meaning:
+This happens because OneDrive sometimes blocks Python from creating runtime files inside the project folder.
+
+This is not a model error.
+
+The project automatically saves artifacts to:
+
+C:\Users\LENOVO\AppData\Local\Temp\explainable_predictive_maintenance\reports
+
+
+17. FINAL PROJECT SUMMARY
+-------------------------
+
+This project:
+
+- Generates or loads industrial machine data.
+- Preprocesses sensor data.
+- Trains multiple machine learning models.
+- Compares model performance.
+- Selects the best model.
+- Predicts machine failure risk.
+- Explains predictions using Explainable AI.
+- Shows maintenance recommendations.
+- Provides a modern Streamlit dashboard.
+- Includes analysis graphs for maintenance decision-making.
+
+In simple words:
+The project predicts which machine may fail, explains why it may fail, and tells the maintenance team what to inspect or repair.
+
